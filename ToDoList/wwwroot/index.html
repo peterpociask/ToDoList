@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.js"
+            integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/all.css">
+    <script type="text/javascript">
+
+
+        $(document).ready(function () {
+            LoadListItems();
+        });
+
+        function AddListItem() {
+            var toDoItem = {
+                "ID": parseInt(Math.random()),
+                "Name": $("#newListItem").val(),
+                "isChecked": false
+            }
+
+            $.ajax({
+                url: "/api/ToDoItems",
+                method: 'post',
+                contentType: "text/json",
+                data: JSON.stringify(toDoItem)
+            }).done(function () {
+                LoadListItems();
+            });
+        }
+
+        function LoadListItems() {
+            $.ajax({
+                url: "/api/todoitems"
+            }).done(function (data) {
+                $('#toDoList').empty();
+                data.forEach(function (arrayItem) {
+                    var status = arrayItem.isChecked ? "fas fa-check-circle" : "far fa-circle";
+                    $('#toDoList').append("<li class='listitem' id='" + arrayItem.id + "' data-checked='" + arrayItem.isChecked + "'><div class=\"todoitem\"><div><i class=\"" + status + " fa-4x\"></i><span class=\"todoText\">" + arrayItem.name + "</span></div></div></li>");
+                });
+            });
+        }
+
+        $(document).ready(function () {
+            $("body").on('click', 'li', function (event) {
+
+                var toDoItem = {
+                    "Id": parseInt($(this).attr('id')),
+                    "Name": $(this).text(),
+                    "isChecked": false
+                };
+
+                // this is needlessly ugly but good enough for a poc
+                if ($(this).data("checked")) {
+                    console.log('got here');
+                    $(this).data("checked", false);
+                    toDoItem.isChecked = false;
+                    $(this).children('i').removeClass('fas fa-check-circle');
+                    $(this).children('i').addClass('far fa-circle');
+                } else {
+                    $(this).data("checked", true);
+                    toDoItem.isChecked = true;
+                    $(this).children('i').removeClass('far fa-circle');
+                    $(this).children('i').addClass('fas fa-check-circle');
+                }
+
+                UpdateItem(toDoItem);
+            });
+        });
+
+        function UpdateItem(item) {
+            $.ajax({
+                url: "/api/todoitems/" + item.Id,
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(item)
+            }).done(function () {
+                LoadListItems();
+            });
+        }
+
+
+
+        function DeleteItem(item) {
+            $.ajax({
+                url: "/api/todoitems/" + item.Id,
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }).done(function () {
+                LoadListItems();
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div>
+        <input id="newListItem" name="newListItem" type="text" />
+        <button onclick="javascript:AddListItem();">Add A New Item</button>
+
+    </div>
+    <div>
+        <ul id="toDoList">
+        </ul>
+    </div>
+
+</body>
+
+</html>
+
+<style>
+
+    li.listitem {
+        pointer-events: all;
+    }
+
+
+    ul {
+        list-style: none;
+    }
+
+    span.todoText {
+        font-size: 50px;
+        margin: auto;
+        padding-left: 10px;
+        position: absolute;
+        top: 50%;
+        height: 2em;
+        margin-top: -.75em
+    }
+
+    div.todoitem {
+        border-width: 3px;
+        border-style: solid;
+        margin-top: 10px;
+        padding: 25px;
+        border-bottom-left-radius: 35px;
+        border-top-left-radius: 35px;
+        width: 50%;
+        position: relative;
+    }
+</style>
